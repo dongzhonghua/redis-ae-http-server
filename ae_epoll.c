@@ -71,7 +71,7 @@ static int aeApiCreate(aeEventLoop *eventLoop) {
         return -1;
     }
 
-    // 赋值给 eventLoop  (struct aeApiState*)pLoop->apidata 可以这么转回来
+    // 赋值给 eventLoop  (struct aeApiState*)eventLoop->apidata 可以这么转回来
     eventLoop->apidata = state;
     return 0;
 }

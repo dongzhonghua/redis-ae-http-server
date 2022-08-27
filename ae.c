@@ -91,6 +91,7 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
     eventLoop->maxfd = -1;
     //每次调用epoll\select前调用的函数，由框架使用者注册
     eventLoop->beforesleep = NULL;
+    // 多路复用初始化
     if (aeApiCreate(eventLoop) == -1) goto err;
 
     /* Events with mask == AE_NONE are not set. So let's initialize the

@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-aeEventLoop *pLoop = NULL;
+aeEventLoop *eventLoop = NULL;
 
 //存放错误信息的字符串
 char g_err_string[1024];
@@ -21,7 +21,7 @@ char g_err_string[1024];
 //停止事件循环
 void StopServer() {
     printf("stop server...");
-    aeStop(pLoop);
+    aeStop(eventLoop);
 }
 
 void ClientClose(aeEventLoop *el, int fd, int err) {
@@ -72,18 +72,18 @@ int main(int argc, char **argv) {
 
 
 //    初始化网络事件循环
-    pLoop = aeCreateEventLoop(10);
+    eventLoop = aeCreateEventLoop(10);
 
     int fd = anetTcpServer(g_err_string, PORT, NULL, 100);
     if (ANET_ERR == fd)
         fprintf(stderr, "Open port %d error: %s\n", PORT, g_err_string);
-    if (aeCreateFileEvent(pLoop, fd, AE_READABLE, AcceptTcpHandler, NULL) == AE_ERR) {
+    if (aeCreateFileEvent(eventLoop, fd, AE_READABLE, AcceptTcpHandler, NULL) == AE_ERR) {
         fprintf(stderr, "Unrecoverable error creating server.ipfd file event.\n");
     }
 
-//    aeCreateTimeEvent(pLoop, )
+//    aeCreateTimeEvent(eventLoop, )
 
-    aeMain(pLoop);
+    aeMain(eventLoop);
 
     return 0;
 }
