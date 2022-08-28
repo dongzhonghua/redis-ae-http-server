@@ -1,14 +1,12 @@
 //
 // Created by zhonghua dong on 2022/8/21.
 //
-#include "time.h"
 #include "ae.h"      /* Event driven programming library */
 #include "anet.h"
 #include <stdio.h>
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 aeEventLoop *eventLoop = NULL;
@@ -36,6 +34,22 @@ void ClientClose(aeEventLoop *el, int fd, int err) {
     close(fd);
 }
 
+const char content[] = "HTTP/1.1 200 OK\n"
+                       "Date: Sun, 28 Aug 2022 06:29:09 GMT\n"
+                       "Server: dzh\n"
+                       "Content-Type: text/html\n"
+                       "Content-Length: 112\n"
+                       "\n"
+                       "<html>\n"
+                       "<head>\n"
+                       "<meta charset=\"UTF-8\">\n"
+                       "<title>Hello world</title>\n"
+                       "</head>\n"
+                       "<body>\n"
+                       "<p>你好！</p>\n"
+                       "</body>\n"
+                       "</html>";
+
 //有数据传过来了，读取数据
 void ReadFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     char buffer[MAX_LEN] = {0};
@@ -44,7 +58,7 @@ void ReadFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     if (res <= 0) {
         ClientClose(el, fd, res);
     } else {
-        res = write(fd, buffer, MAX_LEN);
+        res = write(fd, content, sizeof(content));
         if (-1 == res)
             ClientClose(el, fd, res);
     }
@@ -64,6 +78,12 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     }
 }
 
+int timeEventDemo(aeEventLoop *loop, long long id, void *clientData) {
+    static int i = 0;
+    printf("timeEventDemo: %d\n", i++);
+    //30秒后再次执行该函数
+    return 30000;
+}
 
 int main(int argc, char **argv) {
     printf("start server...\n");
@@ -81,7 +101,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Unrecoverable error creating server.ipfd file event.\n");
     }
 
-//    aeCreateTimeEvent(eventLoop, )
+//    aeCreateTimeEvent(eventLoop, 1, timeEventDemo, NULL, NULL);
 
     aeMain(eventLoop);
 
