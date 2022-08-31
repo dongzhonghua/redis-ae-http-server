@@ -65,6 +65,7 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     client *c = (client *) privdata;
     int res;
+    memset(c->read_buf, 0, sizeof(c->read_buf));
     res = read(fd, c->read_buf, MAX_LEN);
     printf("================read================\n");
     printf("%s", (const char *) c->read_buf);
@@ -86,7 +87,12 @@ void writeDataToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     if (-1 == res)
         ClientClose(el, fd, res);
     aeDeleteFileEvent(el, fd, AE_WRITABLE);
-
+    // 这里可能不需要在绑定读事件了，直接删除写事件就可以
+//    if (aeCreateFileEvent(el, fd, AE_READABLE,
+//                          writeDataToClient, privdata) == AE_ERR) {
+//        close(fd);
+//        free(privdata);
+//    }
 }
 
 struct client *handleNewClient(aeEventLoop *el, int fd) {
