@@ -59,19 +59,27 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     }
 }
 
+#define PARSE_REQUEST_INFO 0
+#define PARSE_HEADER 1
+#define PARSE_CONTENT 2
 
 // read
 //有数据传过来了，读取数据
 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     client *c = (client *) privdata;
     int res;
-    memset(c->read_buf, 0, sizeof(c->read_buf));
-    res = read(fd, c->read_buf, MAX_LEN);
+    char *readBuf = (char *) c->read_buf;
+    memset(readBuf, 0, sizeof(*readBuf));
+    res = read(fd, readBuf, MAX_LEN);
     printf("================read================\n");
-    printf("%s", (const char *) c->read_buf);
+    printf("%s", (const char *) readBuf);
     if (res <= 0) {
         ClientClose(el, fd, res);
+        return;
     }
+
+    parse_request(c->httpRequest, readBuf);
+
     // 绑定写事件到事件 loop
     if (aeCreateFileEvent(el, fd, AE_WRITABLE,
                           writeDataToClient, c) == AE_ERR) {
@@ -79,6 +87,7 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
         free(c);
     }
 }
+
 
 // write
 void writeDataToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
@@ -97,6 +106,9 @@ void writeDataToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
 
 struct client *handleNewClient(aeEventLoop *el, int fd) {
     client *c = malloc(sizeof(client));
+    c->httpRequest = malloc(sizeof(httpRequest));
+    c->httpResponse = malloc(sizeof(httpResponse));
+
     c->fd = fd;
 
     // 非阻塞
