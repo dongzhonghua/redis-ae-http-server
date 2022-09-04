@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 
 int main() {
-    setbuf(stdout,NULL);
+    setbuf(stdout, NULL);
     printf("This is server\n");
     // socket
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);

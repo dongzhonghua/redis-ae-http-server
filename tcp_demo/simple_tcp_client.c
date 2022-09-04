@@ -9,7 +9,7 @@
 #include <arpa/inet.h>
 
 int main() {
-    setbuf(stdout,NULL);
+    setbuf(stdout, NULL);
     printf("This is client\n");
     // socket
     int client = socket(AF_INET, SOCK_STREAM, 0);

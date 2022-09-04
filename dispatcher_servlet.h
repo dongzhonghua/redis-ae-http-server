@@ -8,6 +8,7 @@
 #include <time.h>
 #include "ae.h"
 #include "request_response.h"
+
 struct client *handleNewClient(aeEventLoop *el, int fd);
 
 void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask);
@@ -16,7 +17,7 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask);
 
 void writeDataToClient(aeEventLoop *el, int fd, void *privdata, int mask);
 
-void ClientClose(aeEventLoop *el, int fd, int err);
+void ClientClose(aeEventLoop *el, int fd, size_t err);
 
 
 #define MAX_READ_BUFFER 1024

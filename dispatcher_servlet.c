@@ -31,7 +31,7 @@ const char content[] = "HTTP/1.1 200 OK\n"
                        "</body>\n"
                        "</html>";
 
-void ClientClose(aeEventLoop *el, int fd, int err) {
+void ClientClose(aeEventLoop *el, int fd, size_t err) {
     //如果err为0，则说明是正常退出，否则就是异常退出
     if (0 == err)
         printf("Client quit: %d\n", fd);
@@ -67,20 +67,21 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
 //有数据传过来了，读取数据
 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     client *c = (client *) privdata;
-    int res;
+    size_t res;
     char *readBuf = (char *) c->read_buf;
     memset(readBuf, 0, sizeof(*readBuf));
     res = read(fd, readBuf, MAX_LEN);
     printf("================read================\n");
-    printf("%s", (const char *) readBuf);
+    printf("%s\n", (const char *) readBuf);
     if (res <= 0) {
         ClientClose(el, fd, res);
         return;
     }
-
+    // 1. 解析请求
     parse_request(c->httpRequest, readBuf);
+    // 2. 处理请求
 
-    // 绑定写事件到事件 loop
+    // 3. 绑定写事件到事件 loop，等待发送返回信息
     if (aeCreateFileEvent(el, fd, AE_WRITABLE,
                           writeDataToClient, c) == AE_ERR) {
         close(fd);
@@ -92,7 +93,7 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
 // write
 void writeDataToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     printf("================write================\n");
-    int res = write(fd, content, sizeof(content));
+    size_t res = write(fd, content, sizeof(content));
     if (-1 == res)
         ClientClose(el, fd, res);
     aeDeleteFileEvent(el, fd, AE_WRITABLE);

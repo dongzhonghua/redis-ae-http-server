@@ -10,17 +10,17 @@
 #include <stdlib.h>
 
 void parse_request(
-        struct httpRequest * request,
-        char * http_data) {
-    char * start = http_data;
+        struct httpRequest *request,
+        char *http_data) {
+    char *start = http_data;
     // 解析第一行
-    char * method = start;
-    char * url = 0;
-    char * version = 0;
-    for(;*start && *start != '\r'; start++) {
+    char *method = start;
+    char *url = 0;
+    char *version = 0;
+    for (; *start && *start != '\r'; start++) {
         //  method url version 是由 空格 分割的
-        if(*start == ' ') {
-            if(url == 0) {
+        if (*start == ' ') {
+            if (url == 0) {
                 url = start + 1;
             } else {
                 version = start + 1;

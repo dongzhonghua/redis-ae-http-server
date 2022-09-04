@@ -19,28 +19,36 @@
 #define FDSIZE      1000
 #define EPOLLEVENTS 100
 
-static int socket_bind(const char* ip, int port);
+static int socket_bind(const char *ip, int port);
+
 static void do_epoll(int listen_fd);
+
 static void handle_events(int epoll_fd, struct epoll_event *events,
                           int num, int listen_fd, char *buf);
+
 static void handle_accept(int epoll_fd, int listen_fd);
+
 static void do_read(int epoll_fd, int fd, char *buf);
+
 static void do_write(int epoll_fd, int fd, char *buf);
+
 static void add_event(int epoll_fd, int fd, int state);
+
 static void modify_event(int epoll_fd, int fd, int state);
+
 static void delete_event(int epoll_fd, int fd, int state);
 
-int main(int argc,char *argv[]) {
-    int  listen_fd = socket_bind(IPADDRESS, PORT);
+int main(int argc, char *argv[]) {
+    int listen_fd = socket_bind(IPADDRESS, PORT);
     listen(listen_fd, LISTENQ);
     do_epoll(listen_fd);
     return 0;
 }
 
-static int socket_bind(const char* ip,int port) {
-    int  listen_fd;
+static int socket_bind(const char *ip, int port) {
+    int listen_fd;
     struct sockaddr_in servaddr;
-    listen_fd = socket(AF_INET,SOCK_STREAM,0);
+    listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd == -1) {
         perror("socket error:");
         exit(1);
@@ -49,7 +57,7 @@ static int socket_bind(const char* ip,int port) {
     servaddr.sin_family = AF_INET;
     inet_pton(AF_INET, ip, &servaddr.sin_addr);
     servaddr.sin_port = htons(port);
-    if (bind(listen_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) == -1) {
+    if (bind(listen_fd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1) {
         perror("bind error: ");
         exit(1);
     }
@@ -64,7 +72,7 @@ static void do_epoll(int listen_fd) {
     memset(buf, 0, MAXSIZE);
     epoll_fd = epoll_create(FDSIZE);
     add_event(epoll_fd, listen_fd, EPOLLIN);
-    for ( ; ; ) {
+    for (;;) {
         ready_cnt = epoll_wait(epoll_fd, events, EPOLLEVENTS, -1);
         handle_events(epoll_fd, events, ready_cnt, listen_fd, buf);
     }
@@ -89,12 +97,13 @@ handle_events(int epoll_fd, struct epoll_event *events, int num,
             do_write(epoll_fd, fd, buf);
     }
 }
+
 static void handle_accept(int epoll_fd, int listen_fd) {
     int clifd;
     struct sockaddr_in cliaddr;
-    socklen_t  cliaddrlen;
+    socklen_t cliaddrlen;
 
-    clifd = accept(listen_fd, (struct sockaddr*) &cliaddr, &cliaddrlen);
+    clifd = accept(listen_fd, (struct sockaddr *) &cliaddr, &cliaddrlen);
     if (clifd == -1)
         perror("Accpet error:");
     else {
@@ -112,13 +121,11 @@ static void do_read(int epoll_fd, int fd, char *buf) {
         perror("Read error:");
         delete_event(epoll_fd, fd, EPOLLIN);
         close(fd);
-    }
-    else if (nread == 0) {
+    } else if (nread == 0) {
         fprintf(stderr, "Client closed.\n");
         delete_event(epoll_fd, fd, EPOLLIN);
         close(fd);
-    }
-    else {
+    } else {
         //printf("Read message is : %s", buf);
         modify_event(epoll_fd, fd, EPOLLOUT);
     }
@@ -132,8 +139,7 @@ static void do_write(int epoll_fd, int fd, char *buf) {
         perror("Write error:");
         delete_event(epoll_fd, fd, EPOLLOUT);
         close(fd);
-    }
-    else
+    } else
         modify_event(epoll_fd, fd, EPOLLIN);
 
     memset(buf, 0, MAXSIZE);
@@ -148,7 +154,7 @@ static void add_event(int epoll_fd, int fd, int state) {
     }
 }
 
-static void delete_event(int epoll_fd,int fd,int state) {
+static void delete_event(int epoll_fd, int fd, int state) {
     struct epoll_event ev;
     ev.events = state;
     ev.data.fd = fd;
@@ -157,7 +163,7 @@ static void delete_event(int epoll_fd,int fd,int state) {
     }
 }
 
-static void modify_event(int epoll_fd,int fd,int state) {
+static void modify_event(int epoll_fd, int fd, int state) {
     struct epoll_event ev;
     ev.events = state;
     ev.data.fd = fd;
