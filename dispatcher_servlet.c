@@ -31,6 +31,20 @@ const char content[] = "HTTP/1.1 200 OK\n"
                        "</body>\n"
                        "</html>";
 
+void populateCommandTable(void) {
+    int j;
+    controllerDict = dictCreate(&controllerDictType, NULL);
+    // 命令的数量
+    int commands_num = sizeof(controllerTable) / sizeof(struct controller);
+
+    for (j = 0; j < commands_num; j++) {
+        // 指定命令
+        struct controller *c = controllerTable + j;
+        // 将命令关联到命令表
+        dictAdd(controllerDict, strcat(c->url, c->method), c);
+    }
+}
+
 void ClientClose(aeEventLoop *el, int fd, size_t err) {
     //如果err为0，则说明是正常退出，否则就是异常退出
     if (0 == err)
