@@ -34,14 +34,56 @@ void parse_request(
     request->url = url;
     request->version = version;
 
+
+
+    /* 第一行解析结束 */
+    /* 第二行开始为 header  解析hedaer*/
+    request->headers = dictCreate(&dictTypeHeapStrings, NULL);
+
+    start++;   // 第二行开始
+    char *line = start;
+    char *key;
+    char *value;
+    while (*line != '\r' && *line != '\0') {
+        char *key;
+        char *value;
+        while (*(start++) != ':');
+        *(start - 1) = '\0';
+        key = line;
+        value = start;
+        while (start++, *start != '\0' && *start != '\r');
+        *start++ = '\0'; // \r -> \0
+        start++;   // skip \n
+        line = start;
+        dictAdd(request->headers, key, value);
+    }
+    /* 如果最后一行不是空行  说明有body数据 */
+    if (*line == '\r') {
+        char *len_str = dictFetchValue(request->headers, "Content-Length");
+        if (len_str != NULL) {
+            int len = atoi(len_str);
+            // 跳过 两个 \n
+            line = line + 2;
+            *(line + len) = '\0';
+            request->body = line;
+        }
+    }
+
     /*  打印 request 信息 */
     printf("---------------------------\n");
     printf("method is: %s \n", request->method);
     printf("url is: %s \n", request->url);
     printf("http version is: %s \n", request->version);
-//    printf("the headers are :\n");
-//    mapPrint(request->headers);
+    printf("headers are :\n");
+    dictIterator *headersIterator = dictGetIterator(request->headers);
+    dictEntry *de;
+    while ((de = dictNext(headersIterator)) != NULL) {
+        char *k = dictGetKey(de);
+        char *v = dictGetVal(de);
+        printf("\theader key: %s, value: %s\n", k, v);
+    }
     printf("body is %s \n", request->body);
+    printf("---------------------------\n");
     printf("---------------------------\n");
 }
 

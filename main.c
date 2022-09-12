@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 // 程序停止之后会去调用这个回调函数
     signal(SIGINT, StopServer);
 
-
+    populateCommandTable();
 //    初始化网络事件循环
     eventLoop = aeCreateEventLoop(10);
 

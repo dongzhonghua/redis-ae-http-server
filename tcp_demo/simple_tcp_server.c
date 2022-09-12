@@ -33,13 +33,13 @@ int main() {
         printf("Error: listen\n");
         return 0;
     }
-    // accept
     int conn;
     char clientIP[INET_ADDRSTRLEN] = "";
     struct sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
     while (1) {
         printf("...listening\n");
+        // accept
         conn = accept(listenfd, (struct sockaddr *) &clientAddr, &clientAddrLen);
         if (conn < 0) {
             printf("Error: accept\n");
@@ -51,6 +51,7 @@ int main() {
         char buf[255];
         while (1) {
             memset(buf, 0, sizeof(buf));
+            // read
             int len = recv(conn, buf, sizeof(buf), 0);
             buf[len] = '\0';
             if (len == 0 || strcmp(buf, "exit") == 0) {
@@ -58,6 +59,7 @@ int main() {
                 break;
             }
             printf("%s\n", buf);
+            // write
             send(conn, buf, len, 0);
         }
         close(conn);

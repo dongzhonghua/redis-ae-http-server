@@ -15,33 +15,37 @@
 //存放错误信息的字符串
 char g_err_string[1024];
 
-const char content[] = "HTTP/1.1 200 OK\n"
-                       "Date: Sun, 28 Aug 2022 06:29:09 GMT\n"
-                       "Server: dzh\n"
-                       "Content-Type: text/html\n"
-                       "Content-Length: 112\n"
-                       "\n"
-                       "<html>\n"
-                       "<head>\n"
-                       "<meta charset=\"UTF-8\">\n"
-                       "<title>Hello world</title>\n"
-                       "</head>\n"
-                       "<body>\n"
-                       "<p>你好！</p>\n"
-                       "</body>\n"
-                       "</html>";
+const char *response_template = "HTTP/1.1 200 OK\n"
+                                "Date: %s\n"
+                                "Server: dzh\n"
+                                "Content-Type: text/html\n"
+                                "Content-Length: %d\n"
+                                "\n%s";
+
+struct handler {
+    char *url;
+    char *method;
+    // 实现函数
+    HandleRequesFunc *func;
+};
+
+struct handler handlerTable[] = {
+        {"/",      GET,  get_root},
+        {"/get", GET,  get_hello},
+        {"/post", POST, post_hello}
+};
 
 void populateCommandTable(void) {
     int j;
-    controllerDict = dictCreate(&controllerDictType, NULL);
+    handlerDict = dictCreate(&dictTypeHeapStrings, NULL);
     // 命令的数量
-    int commands_num = sizeof(controllerTable) / sizeof(struct controller);
+    int commands_num = sizeof(handlerTable) / sizeof(struct handler);
 
     for (j = 0; j < commands_num; j++) {
         // 指定命令
-        struct controller *c = controllerTable + j;
+        struct handler *c = handlerTable + j;
         // 将命令关联到命令表
-        dictAdd(controllerDict, strcat(c->url, c->method), c);
+        dictAdd(handlerDict, c->url, c);
     }
 }
 
@@ -73,10 +77,6 @@ void AcceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
     }
 }
 
-#define PARSE_REQUEST_INFO 0
-#define PARSE_HEADER 1
-#define PARSE_CONTENT 2
-
 // read
 //有数据传过来了，读取数据
 void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
@@ -85,19 +85,27 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     char *readBuf = (char *) c->read_buf;
     memset(readBuf, 0, sizeof(*readBuf));
     res = read(fd, readBuf, MAX_LEN);
-    printf("================read================\n");
-    printf("%s\n", (const char *) readBuf);
     if (res <= 0) {
         ClientClose(el, fd, res);
         return;
     }
+    printf("================read================\n");
+    printf("%s\n", (const char *) readBuf);
     // 1. 解析请求
     parse_request(c->httpRequest, readBuf);
     // 2. 处理请求
-
+    struct handler *handler = (struct handler *) dictFetchValue(handlerDict, c->httpRequest->url);
+    HandleRequesFunc *func = NULL;
+    if (!handler) {
+        printf("request url: %s handler not found...\n", c->httpRequest->url);
+        func = page_not_found;
+    } else {
+        func = handler->func;
+    }
+    func(c->httpRequest, c->httpResponse);
     // 3. 绑定写事件到事件 loop，等待发送返回信息
     if (aeCreateFileEvent(el, fd, AE_WRITABLE,
-                          writeDataToClient, c) == AE_ERR) {
+                          writeDataToClient, privdata) == AE_ERR) {
         close(fd);
         free(c);
     }
@@ -107,16 +115,20 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask) {
 // write
 void writeDataToClient(aeEventLoop *el, int fd, void *privdata, int mask) {
     printf("================write================\n");
-    size_t res = write(fd, content, sizeof(content));
-    if (-1 == res)
+    struct client *c = NULL;
+    c = (client *) privdata;
+    char *content = c->httpResponse->content;
+    size_t content_len = strlen(content);
+    char data[MAX_READ_BUFFER];
+    memset(data, 0, sizeof(data));
+    sprintf(data, response_template, "2022", content_len, content);
+    printf("----write data----\n%s\n", data);
+    size_t res = write(fd, data, strlen(data));
+    if (-1 == res) {
         ClientClose(el, fd, res);
+    }
     aeDeleteFileEvent(el, fd, AE_WRITABLE);
-    // 这里可能不需要在绑定读事件了，直接删除写事件就可以
-//    if (aeCreateFileEvent(el, fd, AE_READABLE,
-//                          writeDataToClient, privdata) == AE_ERR) {
-//        close(fd);
-//        free(privdata);
-//    }
+    printf("================write done================\n");
 }
 
 struct client *handleNewClient(aeEventLoop *el, int fd) {

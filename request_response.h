@@ -7,6 +7,8 @@
 /* request_response.h
 */
 
+#include "dict.h"
+
 #ifndef __REQUEST_RESPONSE__
 #define __REQUEST_RESPONSE__
 
@@ -17,6 +19,7 @@ typedef struct httpRequest {
     char *method;
     char *url;
     char *version;
+    dict *headers;
     char *body;
 } httpRequest;
 

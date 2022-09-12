@@ -11,32 +11,9 @@
 #include "dict.h"
 #include "controller.h"
 
-struct controller {
-    char *url;
-    char *method;
-    // 实现函数
-    serveRequest *func;
-};
-
-struct controller controllerTable[] = {
-        {"/",      GET,  get_root},
-        {"/hello", GET,  getHello},
-        {"/hello", POST, postHello}
-};
-
 void populateCommandTable(void);
 
-
-dictType controllerDictType = {
-        NULL,           /* hash function */
-        NULL,                      /* key dup */
-        NULL,                      /* val dup */
-        NULL,     /* key compare */
-        NULL,         /* key destructor */
-        NULL                       /* val destructor */
-};
-
-dict *controllerDict;
+dict *handlerDict;
 
 struct client *handleNewClient(aeEventLoop *el, int fd);
 
