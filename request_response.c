@@ -34,8 +34,6 @@ void parse_request(
     request->url = url;
     request->version = version;
 
-
-
     /* 第一行解析结束 */
     /* 第二行开始为 header  解析hedaer*/
     request->headers = dictCreate(&dictTypeHeapStrings, NULL);
